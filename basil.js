@@ -6037,6 +6037,7 @@ pub.placeholder = function (textFrame) {
 pub.image = function(img, x, y, w, h) {
   var file = initDataFile(img),
     frame = null,
+    styleFrame = true,
     fitOptions = FitOptions.FILL_PROPORTIONALLY,
     width = null,
     height = null,
@@ -6054,6 +6055,7 @@ pub.image = function(img, x, y, w, h) {
       x instanceof Polygon ||
       x instanceof TextFrame) {
     frame = x;
+    styleFrame = false;
   } else if (isNumber(x) && isNumber(y)) {
     width = 1;
     height = 1;
@@ -6068,7 +6070,9 @@ pub.image = function(img, x, y, w, h) {
       }
     } else {
       if (isNumber(w) && isNumber(h)) {
-        if (w <= 0 || h <= 0) error("image(), invalid parameters. When using image(img, x, y, w, h) with the default imageMode CORNER, parameters w and h need to be greater than 0.");
+        if (w <= 0 || h <= 0) {
+          error("image(), invalid parameters. When using image(img, x, y, w, h) with the default imageMode CORNER, parameters w and h need to be greater than 0.");
+        }
         width = w;
         height = h;
       } else if (arguments.length === 3) {
@@ -6088,6 +6092,8 @@ pub.image = function(img, x, y, w, h) {
   frame.place(file);
   frame.fit(fitOptions);
 
+  if(styleFrame) { // missing indentation of block is to aovid merge conflict; TODO indent once merge happened
+
   if (currImageMode === pub.CENTER) {
     var bounds = frame.geometricBounds;
     width = bounds[3] - bounds[1];
@@ -6105,6 +6111,8 @@ pub.image = function(img, x, y, w, h) {
   frame.strokeWeight = currStrokeWeight;
   frame.strokeTint = currStrokeTint;
   frame.strokeColor = currStrokeColor;
+
+  }
 
   return frame;
 };
