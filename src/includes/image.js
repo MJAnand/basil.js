@@ -23,7 +23,7 @@
 pub.image = function(img, x, y, w, h) {
   var file = initDataFile(img),
     frame = null,
-    styleFrame = true,
+    styleContainer = true,
     fitOptions = FitOptions.FILL_PROPORTIONALLY,
     width = null,
     height = null,
@@ -41,7 +41,7 @@ pub.image = function(img, x, y, w, h) {
       x instanceof Polygon ||
       x instanceof TextFrame) {
     frame = x;
-    styleFrame = false;
+    styleContainer = false;
   } else if (isNumber(x) && isNumber(y)) {
     width = 1;
     height = 1;
@@ -78,7 +78,7 @@ pub.image = function(img, x, y, w, h) {
   frame.place(file);
   frame.fit(fitOptions);
 
-  if(styleFrame) { // missing indentation of block is to aovid merge conflict; TODO indent once merge happened
+  if(styleContainer) { // missing indentation of block is to avoid merge conflict; TODO indent once merge happened
 
   if (currImageMode === pub.CENTER) {
     var bounds = frame.geometricBounds;

@@ -5554,47 +5554,68 @@ pub.lerpColor = function (c1, c2, amt) {
  * @cat Typography
  * @method text
  * @param  {String} txt The text content to set in the text frame.
- * @param  {Number} x   x-coordinate of text frame
+ * @param  {Number|Rectangle|Oval|Polygon|GraphicLine} x   x-coordinate of text frame or item to place the text in or graphic line to place the text onto as a text path.
  * @param  {Number} y   y-coordinate of text frame
  * @param  {Number} w   width of text frame
  * @param  {Number} h   height of text frame
- * @return {TextFrame}  The created text frame instance
+ * @return {TextFrame|TextPath}  The created text frame instance
  */
 pub.text = function(txt, x, y, w, h) {
-  if (arguments.length !== 5) {
-    error("text(), not enough parameters to draw a text! Use: text(txt, x, y, w, h)");
-  }
   if (!(isString(txt) || isNumber(txt))) {
     warning("text(), the first parameter has to be a string! But is something else: " + typeof txt + ". Use: text(txt, x, y, w, h)");
   }
 
-  var textBounds = [];
-  if (currRectMode === pub.CORNER) {
-    textBounds[0] = y;
-    textBounds[1] = x;
-    textBounds[2] = y + h;
-    textBounds[3] = x + w;
-  } else if (currRectMode === pub.CORNERS) {
-    textBounds[0] = y;
-    textBounds[1] = x;
-    textBounds[2] = h;
-    textBounds[3] = w;
-  } else if (currRectMode === pub.CENTER) {
-    textBounds[0] = y - (h / 2);
-    textBounds[1] = x - (w / 2);
-    textBounds[2] = y + (h / 2);
-    textBounds[3] = x + (w / 2);
-  } else if (currRectMode === pub.RADIUS) {
-    textBounds[0] = y - h;
-    textBounds[1] = x - w;
-    textBounds[2] = y + h;
-    textBounds[3] = x + w;
-  }
+  var textFrame;
 
-  var textFrame = currentPage().textFrames.add(currentLayer());
-  textFrame.contents = txt.toString();
-  textFrame.geometricBounds = textBounds;
-  textFrame.textFramePreferences.verticalJustification = currYAlign;
+  if (x instanceof Rectangle ||
+      x instanceof Oval ||
+      x instanceof Polygon) {
+
+    x.contentType = ContentType.TEXT_TYPE;
+    textFrame = x.getElements()[0];
+    textFrame.contents = txt.toString();
+  } else if (x instanceof GraphicLine) {
+    var textFrame = x.textPaths.add();
+    textFrame.contents = txt.toString();
+  } else {
+    var textBounds = [];
+    if (currRectMode === pub.CORNER) {
+      textBounds[0] = y;
+      textBounds[1] = x;
+      textBounds[2] = y + h;
+      textBounds[3] = x + w;
+    } else if (currRectMode === pub.CORNERS) {
+      textBounds[0] = y;
+      textBounds[1] = x;
+      textBounds[2] = h;
+      textBounds[3] = w;
+    } else if (currRectMode === pub.CENTER) {
+      textBounds[0] = y - (h / 2);
+      textBounds[1] = x - (w / 2);
+      textBounds[2] = y + (h / 2);
+      textBounds[3] = x + (w / 2);
+    } else if (currRectMode === pub.RADIUS) {
+      textBounds[0] = y - h;
+      textBounds[1] = x - w;
+      textBounds[2] = y + h;
+      textBounds[3] = x + w;
+    }
+
+    textFrame = currentPage().textFrames.add(currentLayer());
+    textFrame.contents = txt.toString();
+    textFrame.geometricBounds = textBounds;
+    textFrame.textFramePreferences.verticalJustification = currYAlign;
+
+    if (currRectMode === pub.CENTER || currRectMode === pub.RADIUS) {
+      textFrame.transform(CoordinateSpaces.PASTEBOARD_COORDINATES,
+                         AnchorPoint.CENTER_ANCHOR,
+                         currMatrix.adobeMatrix());
+    } else {
+      textFrame.transform(CoordinateSpaces.PASTEBOARD_COORDINATES,
+                     AnchorPoint.TOP_LEFT_ANCHOR,
+                     currMatrix.adobeMatrix());
+    }
+  }
 
   pub.typo(textFrame, {
     appliedFont: currFont,
@@ -5605,17 +5626,6 @@ pub.text = function(txt, x, y, w, h) {
     kerningValue: currKerning,
     tracking: currTracking
   });
-
-
-  if (currRectMode === pub.CENTER || currRectMode === pub.RADIUS) {
-    textFrame.transform(CoordinateSpaces.PASTEBOARD_COORDINATES,
-                       AnchorPoint.CENTER_ANCHOR,
-                       currMatrix.adobeMatrix());
-  } else {
-    textFrame.transform(CoordinateSpaces.PASTEBOARD_COORDINATES,
-                   AnchorPoint.TOP_LEFT_ANCHOR,
-                   currMatrix.adobeMatrix());
-  }
 
   return textFrame;
 };
@@ -6037,7 +6047,7 @@ pub.placeholder = function (textFrame) {
 pub.image = function(img, x, y, w, h) {
   var file = initDataFile(img),
     frame = null,
-    styleFrame = true,
+    styleContainer = true,
     fitOptions = FitOptions.FILL_PROPORTIONALLY,
     width = null,
     height = null,
@@ -6055,7 +6065,7 @@ pub.image = function(img, x, y, w, h) {
       x instanceof Polygon ||
       x instanceof TextFrame) {
     frame = x;
-    styleFrame = false;
+    styleContainer = false;
   } else if (isNumber(x) && isNumber(y)) {
     width = 1;
     height = 1;
@@ -6092,7 +6102,7 @@ pub.image = function(img, x, y, w, h) {
   frame.place(file);
   frame.fit(fitOptions);
 
-  if(styleFrame) { // missing indentation of block is to aovid merge conflict; TODO indent once merge happened
+  if(styleContainer) { // missing indentation of block is to avoid merge conflict; TODO indent once merge happened
 
   if (currImageMode === pub.CENTER) {
     var bounds = frame.geometricBounds;
